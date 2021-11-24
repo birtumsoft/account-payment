@@ -23,11 +23,12 @@
     'license': 'AGPL-3',
     'category': 'Accounting & Finance',
     'data': [
+        'data/account_payment_method_data.xml',
         'views/account_tax_view.xml',
         'views/account_payment_view.xml',
-        'data/account_payment_method_data.xml',
     ],
     'depends': [
+        'payment',
         'account',
         # for payment method description and company_id field on form view
         'account_payment_fix',
