@@ -89,10 +89,10 @@ class AccountJournal(models.Model):
             num_holding_third_checks=len(holding_checks),
             show_third_checks=(
                 'received_third_check' in
-                self.inbound_payment_method_ids.mapped('code')),
+                self.inbound_payment_method_line_ids.mapped('code')),
             show_issue_checks=(
                 'issue_check' in
-                self.outbound_payment_method_ids.mapped('code')),
+                self.outbound_payment_method_line_ids.mapped('code')),
             num_handed_issue_checks=len(handed_checks),
             handed_amount=formatLang(
                 self.env, sum(handed_checks.mapped('amount_company_currency')),
