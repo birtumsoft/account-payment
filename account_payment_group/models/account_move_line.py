@@ -10,6 +10,9 @@ class AccountMoveLine(models.Model):
 
     # inverse field of the one created on payment groups, used by other modules
     # like sipreco
+
+    payment_id = fields.Many2one('account.payment', 'Payment')
+
     payment_group_ids = fields.Many2many(
         'account.payment.group',
         'account_move_line_payment_group_to_pay_rel',

@@ -8,6 +8,159 @@ import logging
 # import odoo.addons.decimal_precision as dp
 _logger = logging.getLogger(__name__)
 
+class AccountPaymentMethod(models.Model):
+    _inherit = 'account.payment.method'
+
+    @api.model
+    def _get_payment_method_information(self):
+        res = super(AccountPaymentMethod, self)._get_payment_method_information()
+        res['received_third_check'] =  {'mode': 'multi', 'domain': [('type', 'in', ('bank', 'cash'))]}
+        res['delivered_third_check'] = {'mode': 'multi', 'domain': [('type', 'in', ('bank', 'cash'))]}
+        res['issue_check'] = {'mode': 'multi', 'domain': [('type', 'in', ('bank', 'cash'))]}
+        return res
+
+class AccountPaymentRegister(models.TransientModel):
+    _inherit = 'account.payment.register'
+
+    check_ids = fields.Many2many(
+        'account.check',
+        string='Checks',
+        copy=False,
+        readonly=True,
+        states={'draft': [('readonly', False)]},
+        auto_join=True,
+    )
+
+    check_id = fields.Many2one(
+        'account.check',
+        compute='_compute_check',
+        string='Check',
+    )
+
+    check_deposit_type = fields.Selection(
+        [('consolidated', 'Consolidated'),
+         ('detailed', 'Detailed')],
+        default='detailed',
+        help="This option is relevant if you use bank statements. Detailed is"
+        " used when the bank credits one by one the checks, consolidated is"
+        " for when the bank credits all the checks in a single movement",
+    )
+
+# check fields, just to make it easy to load checks without need to create
+# them by a m2o record
+    check_name = fields.Char(
+        'Check Name',
+        readonly=True,
+        copy=False,
+        states={'draft': [('readonly', False)]},
+    )
+    check_number = fields.Integer(
+        'Check Number',
+        readonly=True,
+        states={'draft': [('readonly', False)]},
+        copy=False,
+    )
+    check_issue_date = fields.Date(
+        'Check Issue Date',
+        readonly=True,
+        copy=False,
+        states={'draft': [('readonly', False)]},
+        default=fields.Date.context_today,
+    )
+    check_payment_date = fields.Date(
+        'Check Payment Date',
+        readonly=True,
+        help="Only if this check is post dated",
+        states={'draft': [('readonly', False)]},
+    )
+    checkbook_id = fields.Many2one(
+        'account.checkbook',
+        'Checkbook',
+        readonly=True,
+        states={'draft': [('readonly', False)]},
+        auto_join=True,
+    )
+    check_subtype = fields.Selection(
+        related='checkbook_id.issue_check_subtype',
+    )
+    check_bank_id = fields.Many2one(
+        'res.bank',
+        'Check Bank',
+        readonly=True,
+        copy=False,
+        states={'draft': [('readonly', False)]},
+        auto_join=True,
+    )
+    check_owner_vat = fields.Char(
+        'Check Owner Vat',
+        readonly=True,
+        copy=False,
+        states={'draft': [('readonly', False)]}
+    )
+    check_owner_name = fields.Char(
+        'Check Owner Name',
+        readonly=True,
+        copy=False,
+        states={'draft': [('readonly', False)]}
+    )
+
+    checkbook_numerate_on_printing = fields.Boolean(
+        related='checkbook_id.numerate_on_printing',
+    )
+
+    check_type = fields.Char(
+        compute='_compute_check_type',
+    )
+
+    @api.depends('payment_method_code')
+    def _compute_check_type(self):
+        for rec in self:
+            if rec.payment_method_code == 'issue_check':
+                rec.check_type = 'issue_check'
+            elif rec.payment_method_code in [
+                    'received_third_check',
+                    'delivered_third_check']:
+                rec.check_type = 'third_check'
+            else:
+                rec.check_type = False
+
+    check_id = fields.Many2one(
+        'account.check',
+        compute='_compute_check',
+        string='Check',
+    )
+
+    @api.depends('check_ids')
+    def _compute_check(self):
+        for rec in self:
+            rec.check_id = False
+            # we only show checks for issue checks or received thid checks
+            # if len of checks is 1
+            if rec.payment_method_code in (
+                    'received_third_check',
+                    'issue_check',) and len(rec.check_ids) == 1:
+                rec.check_id = rec.check_ids[0].id
+
+
+    def _create_payment_vals_from_batch(self, batch_result):
+        res = super(AccountPaymentRegister,self)._create_payment_vals_from_batch(batch_result)
+        res.update({
+            'check_ids': self.check_ids,
+            'check_id': self.check_id,
+            'check_deposit_type': self.check_deposit_type,
+            'check_name': self.check_name,
+            'check_number': self.check_number,
+            'check_payment_date': self.check_payment_date,
+            'check_issue_date': self.check_issue_date,
+            'checkbook_id': self.checkbook_id,
+            'check_subtype': self.check_subtype,
+            'check_bank_id': self.check_bank_id,
+            'check_owner_vat': self.check_owner_vat,
+            'check_owner_name': self.check_owner_name,
+            'checkbook_numerate_on_printing': self.checkbook_numerate_on_printing,
+
+        })
+        return res    
 
 class AccountPayment(models.Model):
 

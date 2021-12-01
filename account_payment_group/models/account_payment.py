@@ -11,6 +11,26 @@ _logger = logging.getLogger(__name__)
 class AccountPayment(models.Model):
     _inherit = "account.payment"
 
+    matched_move_line_ids = fields.Many2many(
+        'account.move.line',
+        help='Lines that has been matched to payments, only available after '
+        'payment validation',
+    )
+
+
+    move_line_ids = fields.One2many('account.move.line', 'payment_id', readonly=True, copy=False, ondelete='restrict')
+
+
+    """
+    move_line_ids = fields.Many2many(
+        'account.move.line',
+        # related o2m a o2m solo toma el primer o2m y le hace o2m, por eso
+        # hacemos computed
+        # related='payment_ids.move_line_ids',
+        readonly=True,
+        copy=False,
+    )
+    """
     payment_group_id = fields.Many2one(
         'account.payment.group',
         'Payment Group',
@@ -98,7 +118,7 @@ class AccountPayment(models.Model):
         # this change is due this odoo change https://github.com/odoo/odoo/commit/c14b17c4855fd296fd804a45eab02b6d3566bb7a
         if self.payment_group_id:
             self.payment_group_company_id = self.payment_group_id.company_id
-            self.payment_date = self.payment_group_id.payment_date
+            self.date = self.payment_group_id.payment_date
             self.partner_type = self.payment_group_id.partner_type
             self.partner_id = self.payment_group_id.partner_id
             self.payment_type = 'inbound' if self.payment_group_id.partner_type  == 'customer' else 'outbound'
@@ -304,7 +324,7 @@ class AccountPayment(models.Model):
             payment.payment_group_id.post()
         return payment
 
-    @api.depends('invoice_ids', 'payment_type', 'partner_type', 'partner_id')
+    @api.depends('payment_type', 'partner_type', 'partner_id')
     def _compute_destination_account_id(self):
         """
         If we are paying a payment gorup with paylines, we use account
@@ -376,3 +396,36 @@ class AccountPayment(models.Model):
         if rec.get('invoice_ids', False):
             rec.pop('invoice_ids')
         return rec
+
+
+class AccountPaymentRegister(models.TransientModel):
+    _inherit = 'account.payment.register'
+
+    matched_move_line_ids = fields.Many2many(
+        'account.move.line',
+        compute='_compute_matched_move_line_ids',
+        help='Lines that has been matched to payments, only available after '
+        'payment validation',
+    )
+
+    @api.depends('line_ids')
+    def _compute_matched_move_line_ids(self):
+        """
+        Lar partial reconcile vinculan dos apuntes con credit_move_id y
+        debit_move_id.
+        Buscamos primeros todas las que tienen en credit_move_id algun apunte
+        de los que se genero con un pago, etnonces la contrapartida
+        (debit_move_id), son cosas que se pagaron con este pago. Repetimos
+        al revz (debit_move_id vs credit_move_id)
+        """
+        for rec in self:
+            payment_lines = rec.line_ids.filtered(lambda x: x.account_internal_type in ['receivable', 'payable'])
+            rec.matched_move_line_ids =  (payment_lines.mapped('matched_debit_ids.debit_move_id') | payment_lines.mapped('matched_credit_ids.credit_move_id')) - payment_lines
+
+
+    def _create_payment_vals_from_batch(self, batch_result):
+        res = super(AccountPaymentRegister,self)._create_payment_vals_from_batch(batch_result)
+        res.update({
+            'matched_move_line_ids': [(6, 0, self.matched_move_line_ids.ids)],
+        })
+        return res
