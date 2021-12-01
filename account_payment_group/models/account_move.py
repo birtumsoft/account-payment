@@ -54,7 +54,7 @@ class AccountMove(models.Model):
 
     def action_account_invoice_payment_group(self):
         self.ensure_one()
-        if self.state == 'cancel' or self.invoice_payment_state != 'not_paid':
+        if self.state == 'cancel' or self.payment_state != 'not_paid':
             raise ValidationError(_('You can only register payment if invoice is not cancelled and unpaid'))
         return {
             'name': _('Register Payment'),
@@ -89,13 +89,13 @@ class AccountMove(models.Model):
         # validate_payment = not self._context.get('validate_payment')
         for rec in self:
             pay_journal = rec.pay_now_journal_id
-            if pay_journal and rec.state == 'posted' and rec.invoice_payment_state == 'not_paid':
+            if pay_journal and rec.state == 'posted' and rec.payment_state == 'not_paid':
                 # si bien no hace falta mandar el partner_type al paygroup
                 # porque el defaults lo calcula solo en funcion al tipo de
                 # cuenta, es mas claro mandarlo y podria evitar error si
                 # estamos usando cuentas cruzadas (payable, receivable) con
                 # tipo de factura
-                if rec.type in ['in_invoice', 'in_refund']:
+                if rec.move_type  in ['in_invoice', 'in_refund']:
                     partner_type = 'supplier'
                 else:
                     partner_type = 'customer'
@@ -149,7 +149,7 @@ class AccountMove(models.Model):
                 payment_group.post()
 
     def action_view_payment_groups(self):
-        if self.type in ('in_invoice', 'in_refund'):
+        if self.move_type in ('in_invoice', 'in_refund'):
             action = self.env.ref(
                 'account_payment_group.action_account_payments_group_payable')
         else:

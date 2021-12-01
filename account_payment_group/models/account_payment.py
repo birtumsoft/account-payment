@@ -161,14 +161,15 @@ class AccountPayment(models.Model):
                 rec.payment_type_copy = False
             else:
                 rec.payment_type_copy = rec.payment_type
-
+    """
     def get_journals_domain(self):
         domain = super(AccountPayment, self).get_journals_domain()
         if self.payment_group_company_id:
             domain.append(
                 ('company_id', '=', self.payment_group_company_id.id))
         return domain
-
+    """
+    
     @api.onchange('payment_type')
     def _onchange_payment_type(self):
         """
@@ -176,7 +177,8 @@ class AccountPayment(models.Model):
         but we still reset the journal
         """
         if not self.payment_group_id:
-            return super(AccountPayment, self)._onchange_payment_type()
+            return
+            #return super(AccountPayment, self)._onchange_payment_type()
         self.journal_id = False
 
     @api.constrains('payment_group_id', 'payment_type')
@@ -336,8 +338,20 @@ class AccountPayment(models.Model):
             'context': self._context,
         }
 
-    def _prepare_payment_moves(self):
-        all_moves_vals = []
+    def _prepare_move_line_default_vals(self, write_off_line_vals=None):
+        self.ensure_one()
+        vals = super(AccountPayment, self)._prepare_move_line_default_vals(write_off_line_vals=write_off_line_vals)
+        for move_line_vals in vals:
+            if self.payment_group_id.communication:
+                move_line_vals['ref'] = "%s%s" % (self.payment_group_id.communication, move_line_vals['ref'] or '')
+            if self.force_amount_company_currency:
+                for line in move_line_vals['line_ids']:
+                    if line[2].get('debit'):
+                        line[2]['debit'] = self.force_amount_company_currency
+                    if line[2].get('credit'):
+                        line[2]['credit'] = self.force_amount_company_currency
+        return vals
+        """
         for rec in self:
             moves_vals = super(AccountPayment, rec)._prepare_payment_moves()
             for move_vals in moves_vals:
@@ -354,6 +368,7 @@ class AccountPayment(models.Model):
                             line[2]['credit'] = rec.force_amount_company_currency
                 all_moves_vals += [move_vals]
         return all_moves_vals
+        """
 
     @api.model
     def default_get(self, default_fields):
