@@ -62,6 +62,8 @@ class AccountPayment(models.Model):
         readonly=True,
     )
 
+    payment_date = fields.Date(related='date')
+
     def _get_counterpart_move_line_vals(self, invoice=False):
         vals = super(AccountPayment, self)._get_counterpart_move_line_vals(
             invoice=invoice)
@@ -125,6 +127,7 @@ class AccountPaymentRegister(models.TransientModel):
         # compute='get_withholding_data',
         readonly=True,
     )
+
 
     def _create_payment_vals_from_batch(self, batch_result):
         res = super(AccountPaymentRegister,self)._create_payment_vals_from_batch(batch_result)
