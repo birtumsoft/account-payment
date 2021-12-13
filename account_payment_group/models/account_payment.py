@@ -85,6 +85,10 @@ class AccountPayment(models.Model):
         string='Company currency',
     )
 
+    communication = fields.Char()
+
+    move_name = fields.Char()
+
     @api.depends(
         'amount', 'payment_type', 'partner_type', 'amount_company_currency')
     def _compute_signed_amount(self):

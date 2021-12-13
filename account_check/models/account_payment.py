@@ -650,7 +650,7 @@ class AccountPayment(models.Model):
                     rec.destination_journal_id.type)))
         return vals
 
-    def post(self):
+    def action_post(self):
         for rec in self:
             if rec.check_ids and not rec.currency_id.is_zero(
                     sum(rec.check_ids.mapped('amount')) - rec.amount):
@@ -664,7 +664,7 @@ class AccountPayment(models.Model):
                     'Para mandar a proceso de firma debe definir número '
                     'de cheque en cada línea de pago.\n'
                     '* ID del pago: %s') % rec.id)
-        res = super(AccountPayment, self).post()
+        res = super(AccountPayment, self).action_post()
         return res
 
     def _prepare_payment_moves(self):

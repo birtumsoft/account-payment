@@ -140,6 +140,7 @@ result = withholdable_base_amount * 0.10
                 domain.append(('id', '=', payment_group.id))
                 if payment_group.search(domain):
                     raise ValidationError(tax.withholding_user_error_message)
+            import pdb; pdb.set_trace()
             vals = tax.get_withholding_vals(payment_group)
 
             # we set computed_withholding_amount, hacemos round porque
