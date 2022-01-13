@@ -26,8 +26,8 @@ class AccountPaymentRegister(models.TransientModel):
         'account.check',
         string='Checks',
         copy=False,
-        readonly=True,
-        states={'draft': [('readonly', False)]},
+        # readonly=True,
+        # states={'draft': [('readonly', False)]},
         auto_join=True,
     )
 
@@ -50,34 +50,34 @@ class AccountPaymentRegister(models.TransientModel):
 # them by a m2o record
     check_name = fields.Char(
         'Check Name',
-        readonly=True,
+        # readonly=True,
         copy=False,
-        states={'draft': [('readonly', False)]},
+        # states={'draft': [('readonly', False)]},
     )
     check_number = fields.Integer(
         'Check Number',
-        readonly=True,
-        states={'draft': [('readonly', False)]},
+        # readonly=True,
+        # states={'draft': [('readonly', False)]},
         copy=False,
     )
     check_issue_date = fields.Date(
         'Check Issue Date',
-        readonly=True,
+        # readonly=True,
         copy=False,
-        states={'draft': [('readonly', False)]},
+        # states={'draft': [('readonly', False)]},
         default=fields.Date.context_today,
     )
     check_payment_date = fields.Date(
         'Check Payment Date',
         readonly=True,
         help="Only if this check is post dated",
-        states={'draft': [('readonly', False)]},
+        # states={'draft': [('readonly', False)]},
     )
     checkbook_id = fields.Many2one(
         'account.checkbook',
         'Checkbook',
         readonly=True,
-        states={'draft': [('readonly', False)]},
+        # states={'draft': [('readonly', False)]},
         auto_join=True,
     )
     check_subtype = fields.Selection(
@@ -88,20 +88,20 @@ class AccountPaymentRegister(models.TransientModel):
         'Check Bank',
         readonly=True,
         copy=False,
-        states={'draft': [('readonly', False)]},
+        # states={'draft': [('readonly', False)]},
         auto_join=True,
     )
     check_owner_vat = fields.Char(
         'Check Owner Vat',
-        readonly=True,
+        # readonly=True,
         copy=False,
-        states={'draft': [('readonly', False)]}
+        # states={'draft': [('readonly', False)]}
     )
     check_owner_name = fields.Char(
         'Check Owner Name',
-        readonly=True,
+        # readonly=True,
         copy=False,
-        states={'draft': [('readonly', False)]}
+        # states={'draft': [('readonly', False)]}
     )
 
     checkbook_numerate_on_printing = fields.Boolean(

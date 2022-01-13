@@ -37,7 +37,8 @@ class AccountPayment(models.Model):
     
     # Ya existe un campo llamado available_payment_method_line_ids
     payment_method_ids = fields.Many2many(
-        'account.payment.method.line',
+        # 'account.payment.method.line',
+        'account.payment.method',
         compute='_compute_payment_methods',
         string='Available payment methods',
     )
@@ -107,16 +108,20 @@ class AccountPayment(models.Model):
             rec.journal_ids = self.env['account.journal'].search(rec.get_journals_domain())
 
     @api.depends(
-        'journal_id.outbound_payment_method_line_ids',
-        'journal_id.inbound_payment_method_line_ids',
+        #'journal_id.outbound_payment_method_line_ids',
+        #'journal_id.inbound_payment_method_line_ids',
+        'journal_id.outbound_payment_method_ids',
+        'journal_id.inbound_payment_method_ids',
         'payment_type',
     )
     def _compute_payment_methods(self):
         for rec in self:
             if rec.payment_type in ('outbound', 'transfer'):
-                methods = rec.journal_id.outbound_payment_method_line_ids
+                # methods = rec.journal_id.outbound_payment_method_line_ids
+                methods = rec.journal_id.outbound_payment_method_ids
             else:
-                methods = rec.journal_id.inbound_payment_method_line_ids
+                # methods = rec.journal_id.inbound_payment_method_line_ids
+                methods = rec.journal_id.inbound_payment_method_ids
             rec.payment_method_ids = methods
 
     @api.onchange('currency_id')
@@ -198,15 +203,17 @@ class AccountPayment(models.Model):
             # (we consider the first to be the default one)
             payment_methods = (
                 self.payment_type == 'inbound' and
-                self.journal_id.inbound_payment_method_line_ids or
-                self.journal_id.outbound_payment_method_line_ids)
+                # self.journal_id.inbound_payment_method_line_ids or
+                # self.journal_id.outbound_payment_method_line_ids)
+                self.journal_id.inbound_payment_method_ids or
+                self.journal_id.outbound_payment_method_ids)
             # si es una transferencia y no hay payment method de origen,
             # forzamos manual
             if not payment_methods and self.payment_type == 'transfer':
                 payment_methods = self.env.ref(
                     'account.account_payment_method_manual_out')
-            self.payment_method_line_id = (
-                payment_methods and payment_methods[0] or False)
+            # self.payment_method_line_id = (
+            #     payment_methods and payment_methods[0] or False)
             # si se eligió de origen el mismo diario de destino, lo resetiamos
             if self.journal_id == self.destination_journal_id:
                 self.destination_journal_id = False

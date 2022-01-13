@@ -56,6 +56,8 @@
         <field name="name">account.payment.form</field>
         <field name="model">account.payment</field>
         <field name="inherit_id" ref="account.view_account_payment_form"/>
+        <field name="mode">primary</field>
+        <field name="priority">99</field>
         <field name="arch" type="xml">
 
             <!-- we make title invisible and we add a new one -->
@@ -82,8 +84,12 @@
             </div>
 
             <form position="attributes">
+            	<!--
                 <attribute name="create">false</attribute>
                 <attribute name="edit">false</attribute>
+                -->
+                <attribute name="create">1</attribute>
+                <attribute name="edit">1</attribute>
             </form>
             <form>
                 <field name="payment_group_company_id" invisible="1"/>

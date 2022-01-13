@@ -118,6 +118,8 @@ class AccountPayment(models.Model):
 
     @api.onchange('payment_group_id')
     def onchange_payment_group_id(self):
+        if self.env.company.country_id.code != 'AR':
+            return
         # now we change this according when use save & new the context from the payment was erased and we need to use some data.
         # this change is due this odoo change https://github.com/odoo/odoo/commit/c14b17c4855fd296fd804a45eab02b6d3566bb7a
         if self.payment_group_id:
@@ -130,6 +132,9 @@ class AccountPayment(models.Model):
 
     @api.depends('amount', 'other_currency', 'amount_company_currency')
     def _compute_exchange_rate(self):
+        if self.env.company.country_id.code != 'AR':
+            for rec in self:
+                rec.exchange_rate = False
         for rec in self:
             if rec.other_currency:
                 rec.exchange_rate = rec.amount and (
@@ -200,6 +205,8 @@ class AccountPayment(models.Model):
         we disable change of partner_type if we came from a payment_group
         but we still reset the journal
         """
+        if self.env.company.country_id.code != 'AR':
+            return
         if not self.payment_group_id:
             return
             #return super(AccountPayment, self)._onchange_payment_type()
@@ -208,6 +215,8 @@ class AccountPayment(models.Model):
     @api.constrains('payment_group_id', 'payment_type')
     def check_payment_group(self):
         # odoo tests don't create payments with payment gorups
+        if self.env.company.country_id.code != 'AR':
+            return True
         if self.env.registry.in_test_mode():
             return True
         counterpart_aml_dicts = self._context.get('counterpart_aml_dicts')
@@ -291,6 +300,8 @@ class AccountPayment(models.Model):
 
     @api.model
     def create(self, vals):
+        if self.env.company.country_id.code != 'AR':
+            super(AccountPayment, self).create(vals)
         """ When payments are created from bank reconciliation create the
         Payment group before creating payment to avoid raising error, only
         apply when the all the counterpart account are receivable/payable """
@@ -330,6 +341,8 @@ class AccountPayment(models.Model):
 
     @api.depends('payment_type', 'partner_type', 'partner_id')
     def _compute_destination_account_id(self):
+        if self.env.company.country_id.code != 'AR':
+            super(AccountPayment, self)._compute_destination_account_id()
         """
         If we are paying a payment gorup with paylines, we use account
         of lines that are going to be paid
@@ -364,6 +377,8 @@ class AccountPayment(models.Model):
 
     def _prepare_move_line_default_vals(self, write_off_line_vals=None):
         self.ensure_one()
+        if self.env.company.country_id.code != 'AR':
+            super(AccountPayment, self)._prepare_move_line_default_vals(write_off_line_vals)
         vals = super(AccountPayment, self)._prepare_move_line_default_vals(write_off_line_vals=write_off_line_vals)
         for move_line_vals in vals:
             if self.payment_group_id.communication:
@@ -396,6 +411,8 @@ class AccountPayment(models.Model):
 
     @api.model
     def default_get(self, default_fields):
+        if self.env.company.country_id.code != 'AR':
+            super(AccountPayment, self).default_get(default_fields)
         rec = super().default_get(default_fields)
         if rec.get('invoice_ids', False):
             rec.pop('invoice_ids')

@@ -5,6 +5,8 @@
     'category': 'Accounting & Finance',
     'data': [
         'views/account_payment_view.xml',
+        'views/inherit_res_config_settings_view.xml',
+        'wizard/inherit_account_payment_register_view.xml',
     ],
     'demo': [],
     'depends': [

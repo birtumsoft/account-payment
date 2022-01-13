@@ -37,7 +37,7 @@ class AccountPaymentAW(models.Model):
         states={'draft': [('readonly', False)]},
     )
 
-    payment_method_code = fields.Char(related='payment_method_line_id.code')
+    # payment_method_code = fields.Char(related='payment_method_line_id.code')
 
 
     def _prepare_move_line_default_vals(self, write_off_line_vals=None):
@@ -125,7 +125,8 @@ class AccountPaymentRegister(models.TransientModel):
 
     type_tax_use = fields.Selection(related='tax_withholding_id.type_tax_use')
 
-    payment_method_code = fields.Char(related='payment_method_line_id.code')
+    # payment_method_code = fields.Char(related='payment_method_line_id.code')
+    payment_method_code = fields.Char(related='payment_method_id.code')
 
     def _create_payment_vals_from_batch(self, batch_result):
         without_number = self.filtered(
