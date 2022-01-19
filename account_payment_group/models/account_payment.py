@@ -2,7 +2,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import models, fields, api, _
-from odoo.exceptions import ValidationError
+from odoo.exceptions import ValidationError, UserError
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -289,11 +289,12 @@ class AccountPayment(models.Model):
 
         return res
 
+
     @api.model
     def create(self, vals):
-        """ When payments are created from bank reconciliation create the
-        Payment group before creating payment to avoid raising error, only
-        apply when the all the counterpart account are receivable/payable """
+        #When payments are created from bank reconciliation create the
+        #Payment group before creating payment to avoid raising error, only
+        #apply when the all the counterpart account are receivable/payable
         aml_data = self._context.get('counterpart_aml_dicts') or self._context.get('new_aml_dicts') or [{}]
         if aml_data and not vals.get('partner_id'):
             vals.update(self.infer_partner_info(vals))
@@ -323,10 +324,11 @@ class AccountPayment(models.Model):
                 'communication': vals.get('communication'),
             })
             vals['payment_group_id'] = payment_group.id
-        payment = super(AccountPayment, self).create(vals)
+        payment = super(AccountPayment, self.with_context({'skip_account_move_synchronization': True})).create(vals)
         if create_payment_group:
             payment.payment_group_id.post()
         return payment
+
 
     @api.depends('payment_type', 'partner_type', 'partner_id')
     def _compute_destination_account_id(self):
@@ -362,6 +364,8 @@ class AccountPayment(models.Model):
             'context': self._context,
         }
 
+
+
     def _prepare_move_line_default_vals(self, write_off_line_vals=None):
         self.ensure_one()
         vals = super(AccountPayment, self)._prepare_move_line_default_vals(write_off_line_vals=write_off_line_vals)
@@ -375,24 +379,25 @@ class AccountPayment(models.Model):
                     if line[2].get('credit'):
                         line[2]['credit'] = self.force_amount_company_currency
         return vals
-        """
-        for rec in self:
-            moves_vals = super(AccountPayment, rec)._prepare_payment_moves()
-            for move_vals in moves_vals:
-                # If we have a communication on payment group append it before payment communication
-                if rec.payment_group_id.communication:
-                    move_vals['ref'] = "%s%s" % (self.payment_group_id.communication, move_vals['ref'] or '')
 
-                # Si se esta forzando importe en moneda de cia, usamos este importe para debito/credito
-                if rec.force_amount_company_currency:
-                    for line in move_vals['line_ids']:
-                        if line[2].get('debit'):
-                            line[2]['debit'] = rec.force_amount_company_currency
-                        if line[2].get('credit'):
-                            line[2]['credit'] = rec.force_amount_company_currency
-                all_moves_vals += [move_vals]
-        return all_moves_vals
-        """
+    """
+    for rec in self:
+        moves_vals = super(AccountPayment, rec)._prepare_payment_moves()
+        for move_vals in moves_vals:
+            # If we have a communication on payment group append it before payment communication
+            if rec.payment_group_id.communication:
+                move_vals['ref'] = "%s%s" % (self.payment_group_id.communication, move_vals['ref'] or '')
+
+            # Si se esta forzando importe en moneda de cia, usamos este importe para debito/credito
+            if rec.force_amount_company_currency:
+                for line in move_vals['line_ids']:
+                    if line[2].get('debit'):
+                        line[2]['debit'] = rec.force_amount_company_currency
+                    if line[2].get('credit'):
+                        line[2]['credit'] = rec.force_amount_company_currency
+            all_moves_vals += [move_vals]
+    return all_moves_vals
+    """
 
     @api.model
     def default_get(self, default_fields):
