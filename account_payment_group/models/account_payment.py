@@ -334,7 +334,7 @@ class AccountPayment(models.Model):
                 'communication': vals.get('communication'),
             })
             vals['payment_group_id'] = payment_group.id
-        payment = super(AccountPayment, self).create(vals)
+        payment = super(AccountPayment, self.with_context({'skip_account_move_synchronization': True})).create(vals)
         if create_payment_group:
             payment.payment_group_id.post()
         return payment
