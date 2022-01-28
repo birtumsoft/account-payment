@@ -183,7 +183,8 @@ result = withholdable_base_amount * 0.10
                     'account_payment_method_out_withholding')
                 journal = self.env['account.journal'].search([
                     ('company_id', '=', tax.company_id.id),
-                    ('outbound_payment_method_line_ids.code', '=', payment_method.code),
+                    # ('outbound_payment_method_line_ids.code', '=', payment_method.code),
+                    ('outbound_payment_method_ids.code', '=', payment_method.code),
                     ('type', 'in', ['cash', 'bank']),
                 ], limit=1)
                 if not journal:
