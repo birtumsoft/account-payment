@@ -16,32 +16,33 @@ class AccountPaymentMethodAW(models.Model):
         return res
 
 
-class AccountPaymentAW(models.Model):
+class AccountPayment(models.Model):
     _inherit = "account.payment"
 
     tax_withholding_id = fields.Many2one(
         'account.tax',
         string='Withholding Tax',
-        #readonly=True,
+        readonly=True,
         states={'draft': [('readonly', False)]},
     )
     withholding_number = fields.Char(
-        #readonly=True,
+        readonly=True,
         states={'draft': [('readonly', False)]},
         help="If you don't set a number we will add a number automatically "
         "from a sequence that should be configured on the Withholding Tax"
     )
     withholding_base_amount = fields.Monetary(
         string='Withholding Base Amount',
-        #readonly=True,
+        readonly=True,
         states={'draft': [('readonly', False)]},
     )
 
     # payment_method_code = fields.Char(related='payment_method_line_id.code')
+    payment_method_code = fields.Char(related='payment_method_id.code')
 
 
     def _prepare_move_line_default_vals(self, write_off_line_vals=None):
-        vals = super(AccountPaymentAW, self)._prepare_move_line_default_vals(write_off_line_vals=write_off_line_vals)
+        vals = super(AccountPayment, self)._prepare_move_line_default_vals(write_off_line_vals=write_off_line_vals)
         for move_line_vals in vals:
             move_line_vals.update(self._get_withholding_line_vals())
         return vals
@@ -50,7 +51,7 @@ class AccountPaymentAW(models.Model):
     def _prepare_payment_moves(self):
         all_moves_vals = []
         for rec in self:
-            moves_vals = super(AccountPaymentRegister, rec)._prepare_payment_moves()
+            moves_vals = super(AccountPayment, rec)._prepare_payment_moves()
 
             vals = rec._get_withholding_line_vals()
             if vals:
@@ -100,7 +101,7 @@ class AccountPaymentAW(models.Model):
         for rec in payments:
             name = rec.tax_withholding_id.name or rec.payment_method_id.name
             rec.payment_method_description = name
-        return super(AccountPaymentAW, self)._compute_payment_method_description()
+        return super(AccountPayment, self)._compute_payment_method_description()
 
 class AccountPaymentRegister(models.TransientModel):
     _inherit = "account.payment.register"
@@ -161,4 +162,4 @@ class AccountPaymentRegister(models.TransientModel):
         for rec in payments:
             name = rec.tax_withholding_id.name or rec.payment_method_id.name
             rec.payment_method_description = name
-        return super(AccountPaymentRegister, self)._compute_payment_method_description()
+        return super(AccountPaymentRegister, self - payments)._compute_payment_method_description()

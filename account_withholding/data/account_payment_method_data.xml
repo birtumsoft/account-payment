@@ -11,4 +11,6 @@
         <field name="code">withholding_out</field>
         <field name="payment_type">outbound</field>
     </record>
+
+    <!-- <function model="account.journal" name="_enable_withholding_on_cash_journals"/> -->
 </odoo>
