@@ -300,11 +300,11 @@ class AccountPayment(models.Model):
 
     @api.model
     def create(self, vals):
-        if self.env.company.country_id.code != 'AR':
-            super(AccountPayment, self).create(vals)
         """ When payments are created from bank reconciliation create the
         Payment group before creating payment to avoid raising error, only
         apply when the all the counterpart account are receivable/payable """
+        if self.env.company.country_id.code != 'AR':
+            super(AccountPayment, self).create(vals)
         aml_data = self._context.get('counterpart_aml_dicts') or self._context.get('new_aml_dicts') or [{}]
         if aml_data and not vals.get('partner_id'):
             vals.update(self.infer_partner_info(vals))

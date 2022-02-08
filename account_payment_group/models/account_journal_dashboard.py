@@ -5,8 +5,8 @@ class AccountJournal(models.Model):
     _inherit = "account.journal"
 
     def open_payments_action(self, payment_type, mode='tree'):
-        if self.env.company.country_id.code == 'AR' and payment_type == 'transfer':
         # if payment_type == 'transfer':
+        if self.env.company.country_id.code == 'AR' and payment_type == 'transfer':
             ctx = self._context.copy()
             ctx.update({
                 'default_payment_type': payment_type,

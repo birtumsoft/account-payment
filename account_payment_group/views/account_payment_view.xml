@@ -29,6 +29,8 @@
 <record id="view_account_payment_from_group_tree" model="ir.ui.view">
     <field name="name">account.payment.tree</field>
     <field name="model">account.payment</field>
+    <field name="mode">primary</field>
+    <field name="priority">99</field>
     <field name="arch" type="xml">
         <tree>
             <field name="name"/>
@@ -43,8 +45,7 @@
             <field name="currency_id" invisible="1"/>
             <field name="company_currency_id" invisible="1"/>
             <field name="partner_type" invisible="1"/>
-            <button type="object" 
-                    class="oe_highlight"
+            <button type="object"
                     name="show_details"
                     icon="fa-pencil"/>
         </tree>
