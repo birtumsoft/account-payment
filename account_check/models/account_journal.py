@@ -90,6 +90,10 @@ class AccountJournal(models.Model):
             super(AccountJournal, self).get_journal_dashboard_datas(),
             num_checks_to_numerate=num_checks_to_numerate,
             num_holding_third_checks=len(holding_checks),
+            # show_third_checks=(
+            #     'received_third_check' in
+            #     self.inbound_payment_method_line_ids.mapped('code')),
+            #    self.inbound_payment_method_ids.mapped('code')),
             show_third_checks=(
                 'received_third_check' in
                 self.inbound_payment_method_ids.mapped('code')),
