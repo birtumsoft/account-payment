@@ -101,7 +101,7 @@ class AccountPayment(models.Model):
         for rec in payments:
             name = rec.tax_withholding_id.name or rec.payment_method_id.name
             rec.payment_method_description = name
-        return super(AccountPayment, self)._compute_payment_method_description()
+        return super(AccountPayment, self - payments)._compute_payment_method_description()
 
 class AccountPaymentRegister(models.TransientModel):
     _inherit = "account.payment.register"
