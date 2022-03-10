@@ -37,6 +37,8 @@ class AccountPaymentAW(models.Model):
         states={'draft': [('readonly', False)]},
     )
 
+    type_tax_use = fields.Selection(related='tax_withholding_id.type_tax_use')
+
     payment_method_code = fields.Char(related='payment_method_line_id.code')
 
 
