@@ -53,7 +53,8 @@ class AccountPayment(models.Model):
     # )
     destination_journal_ids = fields.Many2many(
         'account.journal',
-        compute='_compute_destination_journals'
+        compute='_compute_destination_journals',
+        string="Destination journal"
     )
 
     @api.depends(

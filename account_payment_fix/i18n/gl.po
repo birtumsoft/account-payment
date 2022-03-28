@@ -42,7 +42,7 @@ msgstr ""
 #. module: account_payment_fix
 #: model:ir.model.fields,field_description:account_payment_fix.field_account_payment__destination_journal_ids
 msgid "Destination Journal"
-msgstr ""
+msgstr "Destination journal"
 
 #. module: account_payment_fix
 #: model:ir.model.fields,field_description:account_payment_fix.field_account_payment__journal_id

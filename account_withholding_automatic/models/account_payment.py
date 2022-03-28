@@ -62,7 +62,7 @@ class AccountPayment(models.Model):
         readonly=True,
     )
 
-    payment_date = fields.Date(related='date')
+    payment_date = fields.Date(related='date', string="Payment date")
 
     def _get_counterpart_move_line_vals(self, invoice=False):
         vals = super(AccountPayment, self)._get_counterpart_move_line_vals(
