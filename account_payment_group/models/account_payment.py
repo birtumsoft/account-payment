@@ -18,7 +18,7 @@ class AccountPayment(models.Model):
     )
 
 
-    move_line_ids = fields.One2many('account.move.line', 'payment_id', readonly=True, copy=False, ondelete='restrict')
+    move_line_ids = fields.One2many('account.move.line', 'payment_id', readonly=True, copy=False)
 
 
     """
