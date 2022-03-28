@@ -38,7 +38,6 @@ class AccountPaymentGroup(models.Model):
     )
     partner_type = fields.Selection(
         [('customer', 'Customer'), ('supplier', 'Vendor')],
-        track_visibility='always',
         change_default=True,
     )
     partner_id = fields.Many2one(
@@ -47,7 +46,6 @@ class AccountPaymentGroup(models.Model):
         required=True,
         readonly=True,
         states={'draft': [('readonly', False)]},
-        track_visibility='always',
         change_default=True,
         index=True,
     )
@@ -61,7 +59,6 @@ class AccountPaymentGroup(models.Model):
         default=lambda self: self.env.company.currency_id,
         readonly=True,
         states={'draft': [('readonly', False)]},
-        track_visibility='always',
     )
     payment_date = fields.Date(
         string='Payment Date',
@@ -119,12 +116,10 @@ class AccountPaymentGroup(models.Model):
         # string='Total To Pay Amount',
         readonly=True,
         states={'draft': [('readonly', False)]},
-        track_visibility='always',
     )
     payments_amount = fields.Monetary(
         compute='_compute_payments_amount',
         string='Amount',
-        track_visibility='always',
     )
     state = fields.Selection([
         ('draft', 'Draft'),
@@ -138,7 +133,6 @@ class AccountPaymentGroup(models.Model):
         default='draft',
         copy=False,
         string="Status",
-        track_visibility='onchange',
         index=True,
     )
     has_outstanding = fields.Boolean(
@@ -195,7 +189,6 @@ class AccountPaymentGroup(models.Model):
         'account.payment',
         'payment_group_id',
         string='Payment Lines',
-        ondelete='cascade',
         copy=False,
         readonly=True,
         states={
