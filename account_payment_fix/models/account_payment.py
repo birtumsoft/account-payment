@@ -31,7 +31,7 @@ class AccountPayment(models.Model):
 
     def _compute_payment_method_description(self):
         for rec in self:
-            rec.payment_method_description = rec.payment_method_id.display_name
+            rec.payment_method_description = rec.tax_withholding_id.display_name
 
     # nuevo campo funcion para definir dominio de los metodos
     

@@ -170,6 +170,11 @@ result = withholdable_base_amount * 0.10
                 'withholdable_invoiced_amount')
             vals['amount'] = computed_withholding_amount
             vals['computed_withholding_amount'] = computed_withholding_amount
+            
+            if payment_group.partner_id.default_regimen_ganancias_id:
+                default_regimen_ganancias_id = payment_group.partner_id.default_regimen_ganancias_id
+                ref = "%s - %s" % (default_regimen_ganancias_id.codigo_de_regimen, default_regimen_ganancias_id.concepto_referencia)
+                vals['ref'] = ref
 
             # por ahora no imprimimos el comment, podemos ver de llevarlo a
             # otro campo si es de utilidad
