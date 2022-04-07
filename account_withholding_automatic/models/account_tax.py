@@ -200,7 +200,9 @@ result = withholdable_base_amount * 0.10
                 vals['payment_type'] = 'outbound'
                 vals['partner_type'] = payment_group.partner_type
                 vals['partner_id'] = payment_group.partner_id.id
+                vals['withholding_number'] = tax.withholding_sequence_id.next_by_id()
                 payment_withholding = payment_withholding.create(vals)
+
         return True
 
     # def get_withholdable_invoiced_amount(self, payment_group):

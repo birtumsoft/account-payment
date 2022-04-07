@@ -48,3 +48,4 @@ class AccountMoveLine(models.Model):
         compute='_compute_payment_group_matched_amount',
         currency_field='company_currency_id',
     )
+

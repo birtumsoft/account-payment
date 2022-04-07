@@ -41,11 +41,10 @@ class AccountPaymentAW(models.Model):
 
     payment_method_code = fields.Char(related='payment_method_line_id.code')
 
-
     def _prepare_move_line_default_vals(self, write_off_line_vals=None):
         vals = super(AccountPaymentAW, self)._prepare_move_line_default_vals(write_off_line_vals=write_off_line_vals)
         for move_line_vals in vals:
-            move_line_vals.update(self._get_withholding_line_vals())
+            move_line_vals.update(self._get_withholding_line_vals(move_line_vals))
         return vals
 
     """
@@ -64,7 +63,7 @@ class AccountPaymentAW(models.Model):
     """
 
 
-    def _get_withholding_line_vals(self):
+    def _get_withholding_line_vals(self, move_line_vals):
         vals = {}
         if self.payment_method_code in ['withholding_in', 'withholding_out']:
             if self.payment_type == 'transfer':
@@ -83,16 +82,17 @@ class AccountPaymentAW(models.Model):
                 raise UserError(
                     'En los impuestos de retención debe haber una línea de repartición de tipo tax para pagos y otra'
                     'para reembolsos')
+
             account = rep_lines.account_id
+            if rep_field == 'invoice_repartition_line_ids':
+                if move_line_vals.get('debit', False):
+                    account = self.destination_account_id
+                    vals['name'] = self.withholding_number or '/'
+
             # if not accounts on taxes then we use accounts of journal
             if account:
                 vals['account_id'] = account.id
-            vals['name'] = self.withholding_number or '/'
             vals['tax_repartition_line_id'] = rep_lines.id
-            # if not account:
-            #     raise UserError(_(
-            #         'Accounts not configured on tax %s' % (
-            #             self.tax_withholding_id.name)))
         return vals
 
     @api.depends('payment_method_code', 'tax_withholding_id.name')

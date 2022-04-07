@@ -2,7 +2,7 @@
 # For copyright and license notices, see __manifest__.py file in module root
 # directory
 ##############################################################################
-from odoo import models, fields
+from odoo import models, fields, api
 # import odoo.addons.decimal_precision as dp
 # from odoo.exceptions import ValidationError
 # from dateutil.relativedelta import relativedelta
@@ -63,6 +63,37 @@ class AccountPayment(models.Model):
     )
 
     payment_date = fields.Date(related='date', string="Payment date")
+
+    # == Payment difference fields ==
+    payment_difference = fields.Monetary(
+        compute='_compute_payment_difference')
+    payment_difference_handling = fields.Selection([
+        ('open', 'Keep open'),
+        ('reconcile', 'Mark as fully paid'),
+    ], default='open', string="Payment Difference Handling")
+    writeoff_account_id = fields.Many2one('account.account',
+                                          string="Difference Account",
+                                          copy=False,
+                                          domain="[('deprecated', '=', False), ('company_id', '=', company_id)]")
+    writeoff_label = fields.Char(string='Journal Item Label',
+                                 default='Write-Off',
+                                 help='Change label of the counterpart that will hold the payment difference')
+
+    @api.depends('amount', 'currency_id')
+    def _compute_payment_difference(self):
+        for rec in self:
+            if rec.payment_group_id.currency_id == rec.currency_id:
+                # Same currency.
+                rec.payment_difference = rec.payment_group_id.to_pay_amount - rec.amount
+            elif rec.currency_id == rec.company_id.currency_id:
+                # Payment expressed on the company's currency.
+                rec.payment_difference = rec.payment_group_id.to_pay_amount - rec.amount
+            else:
+                # Foreign currency on payment different than the one set on the journal entries.
+                amount_payment_currency = rec.company_id.currency_id._convert(
+                    rec.payment_group_id.to_pay_amount - rec.payment_group_id.payments_amount, rec.currency_id, rec.company_id,
+                    rec.payment_date)
+                rec.payment_difference = amount_payment_currency - rec.amount
 
     def _get_counterpart_move_line_vals(self, invoice=False):
         vals = super(AccountPayment, self)._get_counterpart_move_line_vals(

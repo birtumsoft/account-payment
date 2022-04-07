@@ -589,7 +589,7 @@ class AccountPaymentGroup(models.Model):
             return ''
         move_ids = self.env['account.move'].browse(active_ids)
         if move_ids.filtered(lambda x: x.state != 'posted') or \
-                move_ids.filtered(lambda x: x.invoice_payment_state != 'not_paid'):
+                move_ids.filtered(lambda x: x.payment_state != 'not_paid'):
             raise ValidationError(_('You can only register payment if invoice is posted and unpaid'))
         return {
             'name': _('Register Payment'),

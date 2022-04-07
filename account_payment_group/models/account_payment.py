@@ -89,6 +89,8 @@ class AccountPayment(models.Model):
 
     move_name = fields.Char()
 
+
+
     @api.depends(
         'amount', 'payment_type', 'partner_type', 'amount_company_currency')
     def _compute_signed_amount(self):
