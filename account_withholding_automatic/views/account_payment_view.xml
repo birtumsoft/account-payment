@@ -27,9 +27,9 @@
                     <group name="group3"
                                attrs="{'invisible': [('payment_difference', '=', 0.0)]}"
                                groups="account.group_account_readonly">
-                            <label for="payment_difference"/>
+                            <label for="payment_difference" string="Diferencia en pago"/>
                             <div>
-                                <field name="payment_difference" string="Diferencia en pago"/>
+                                <field name="payment_difference" />
                                 <!--<field name="payment_difference_handling" widget="radio" nolabel="1"/>-->
                                 <!--<div attrs="{'invisible': [('payment_difference_handling','=','open')]}">-->
                                     <!--<label for="writeoff_account_id" string="Post Difference In" class="oe_edit_only"/>-->
