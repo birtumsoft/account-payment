@@ -80,7 +80,7 @@ class AccountPayment(models.Model):
     def _prepare_move_line_default_vals(self, write_off_line_vals=None):
         res = super()._prepare_move_line_default_vals(write_off_line_vals=write_off_line_vals)
 
-        if self.payment_method_code == 'withholding':
+        if self.payment_method_code in ['withholding_in', 'withholding_out']:
             if self.payment_type == 'transfer':
                 raise UserError(_('You can not use withholdings on transfers!'))
             rep_line = self._get_withholding_repartition_line()
