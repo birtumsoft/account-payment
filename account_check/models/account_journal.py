@@ -24,7 +24,7 @@ class AccountJournal(models.Model):
             'account_check.account_payment_method_issue_check')
         # if (issue_checks.id in [pml.payment_method_id.id for pml in rec.outbound_payment_method_line_ids] and
         #         not rec.checkbook_ids):
-        if (issue_checks.id in [pml.payment_method_id.id for pml in rec.outbound_payment_method_ids] and
+        if (issue_checks.id in [pml.id for pml in rec.outbound_payment_method_ids] and
                 not rec.checkbook_ids):
             rec._create_checkbook()
         return rec

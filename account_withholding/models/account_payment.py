@@ -40,27 +40,54 @@ class AccountPayment(models.Model):
     # payment_method_code = fields.Char(related='payment_method_line_id.code')
     payment_method_code = fields.Char(related='payment_method_id.code')
 
+    # def _prepare_move_line_default_vals(self, write_off_line_vals=None):
+    #     vals = super(AccountPayment, self)._prepare_move_line_default_vals(write_off_line_vals=write_off_line_vals)
+    #     for move_line_vals in vals:
+    #         move_line_vals.update(self._get_withholding_line_vals())
+    #     return vals
+
+    # """
+    # def _prepare_payment_moves(self):
+    #     all_moves_vals = []
+    #     for rec in self:
+    #         moves_vals = super(AccountPayment, rec)._prepare_payment_moves()
+
+    #         vals = rec._get_withholding_line_vals()
+    #         if vals:
+    #             moves_vals[0]['line_ids'][1][2].update(vals)
+
+    #         all_moves_vals += moves_vals
+
+    #     return all_moves_vals
+    # """
+    def _get_withholding_repartition_line(self):
+        self.ensure_one()
+        if ((self.partner_type == 'customer' and self.payment_type == 'inbound') or
+                (self.partner_type == 'supplier' and self.payment_type == 'outbound')):
+            rep_field = 'invoice_repartition_line_ids'
+        else:
+            rep_field = 'refund_repartition_line_ids'
+        rep_line = self.tax_withholding_id[rep_field].filtered(lambda x: x.repartition_type == 'tax')
+        if len(rep_line) != 1:
+            raise UserError(
+                'En los impuestos de retención debe haber una línea de repartición de tipo tax para pagos y otra'
+                'para reembolsos')
+        if not rep_line.account_id:
+            raise UserError(_('The tax %s dont have account configured on the tax repartition line') % (
+                rep_line.tax_id.name))
+        return rep_line
 
     def _prepare_move_line_default_vals(self, write_off_line_vals=None):
-        vals = super(AccountPayment, self)._prepare_move_line_default_vals(write_off_line_vals=write_off_line_vals)
-        for move_line_vals in vals:
-            move_line_vals.update(self._get_withholding_line_vals())
-        return vals
+        res = super()._prepare_move_line_default_vals(write_off_line_vals=write_off_line_vals)
 
-    """
-    def _prepare_payment_moves(self):
-        all_moves_vals = []
-        for rec in self:
-            moves_vals = super(AccountPayment, rec)._prepare_payment_moves()
-
-            vals = rec._get_withholding_line_vals()
-            if vals:
-                moves_vals[0]['line_ids'][1][2].update(vals)
-
-            all_moves_vals += moves_vals
-
-        return all_moves_vals
-    """
+        if self.payment_method_code in ['withholding_in', 'withholding_out']:
+            if self.payment_type == 'transfer':
+                raise UserError(_('You can not use withholdings on transfers!'))
+            rep_line = self._get_withholding_repartition_line()
+            res[0]['name'] = self.withholding_number or '/'
+            res[0]['account_id'] = rep_line.account_id.id
+            res[0]['tax_repartition_line_id'] = rep_line.id
+        return res
 
 
     def _get_withholding_line_vals(self):

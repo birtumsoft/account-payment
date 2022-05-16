@@ -542,43 +542,99 @@ class AccountPaymentGroup(models.Model):
                 raise ValidationError(_('To Pay Lines must be of the same account!'))
         self.write({'state': 'confirmed'})
 
+    # def post(self):
+    #     create_from_website = self._context.get('create_from_website', False)
+    #     create_from_statement = self._context.get('create_from_statement', False)
+    #     create_from_expense = self._context.get('create_from_expense', False)
+    #     for rec in self:
+    #         # TODO if we want to allow writeoff then we can disable this
+    #         # constrain and send writeoff_journal_id and writeoff_acc_id
+    #         if not rec.payment_ids:
+    #             raise ValidationError(_(
+    #                 'You can not confirm a payment group without payment '
+    #                 'lines!'))
+    #         # si el pago se esta posteando desde statements y hay doble
+    #         # validacion no verificamos que haya deuda seleccionada
+    #         if (rec.payment_subtype == 'double_validation' and
+    #                 rec.payment_difference and (not create_from_statement and
+    #                                             not create_from_expense)):
+    #             raise ValidationError(_(
+    #                 'To Pay Amount and Payment Amount must be equal!'))
+
+    #         writeoff_acc_id = False
+    #         writeoff_journal_id = False
+    #         # if the partner of the payment is different of ht payment group we change it.
+    #         rec.payment_ids.filtered(lambda p : p.partner_id != rec.partner_id).write(
+    #             {'partner_id': rec.partner_id.id})
+    #         # al crear desde website odoo crea primero el pago y lo postea
+    #         # y no debemos re-postearlo
+    #         if not create_from_website and not create_from_expense:
+    #             rec.payment_ids.filtered(lambda x: x.state == 'draft').action_post()
+
+    #         counterpart_aml = rec.payment_ids.mapped('move_line_ids').filtered(
+    #             lambda r: not r.reconciled and r.account_id.internal_type in (
+    #                 'payable', 'receivable'))
+
+    #         # porque la cuenta podria ser no recivible y ni conciliable
+    #         # (por ejemplo en sipreco)
+    #         if counterpart_aml and rec.to_pay_move_line_ids:
+    #             (counterpart_aml + (rec.to_pay_move_line_ids)).reconcile()
+
+    #         rec.state = 'posted'
+    #     return True
+
     def post(self):
-        create_from_website = self._context.get('create_from_website', False)
-        create_from_statement = self._context.get('create_from_statement', False)
-        create_from_expense = self._context.get('create_from_expense', False)
+        """ Post payment group. If payment is created automatically when creating a payment (for eg. from website
+        or expenses), then:
+        1. do not post payments (posted by super method)
+        2. do not reconcile (reconciled by super)
+        3. do not check double validation
+        TODO: may be we can improve code and actually do what we want for payments from payment groups"""
+        created_automatically = self._context.get('created_automatically')
+        posted_payment_groups = self.filtered(lambda x: x.state == 'posted')
+        if posted_payment_groups:
+            raise ValidationError(_(
+                "You can't post and already posted payment group. Payment group ids: %s") % posted_payment_groups.ids)
         for rec in self:
-            # TODO if we want to allow writeoff then we can disable this
-            # constrain and send writeoff_journal_id and writeoff_acc_id
+            if not rec.document_number:
+                if rec.receiptbook_id and not rec.receiptbook_id.sequence_id:
+                    raise ValidationError(_(
+                        'Error!. Please define sequence on the receiptbook'
+                        ' related documents to this payment or set the '
+                        'document number.'))
+                if rec.receiptbook_id.sequence_id:
+                    rec.document_number = (
+                        rec.receiptbook_id.with_context(
+                            ir_sequence_date=rec.payment_date
+                        ).sequence_id.next_by_id())
+            rec.payment_ids.name = rec.name
+
             if not rec.payment_ids:
                 raise ValidationError(_(
-                    'You can not confirm a payment group without payment '
-                    'lines!'))
-            # si el pago se esta posteando desde statements y hay doble
-            # validacion no verificamos que haya deuda seleccionada
-            if (rec.payment_subtype == 'double_validation' and
-                    rec.payment_difference and (not create_from_statement and
-                                                not create_from_expense)):
-                raise ValidationError(_(
-                    'To Pay Amount and Payment Amount must be equal!'))
+                    'You can not confirm a payment group without payment lines!'))
+            # si todos los pagos hijos estan posteados es probable que venga de un pago creado en otro lugar
+            # (expenses por ejemplo), en ese caso salteamos la dobule validation
+            if (rec.payment_subtype == 'double_validation' and rec.payment_difference and not created_automatically):
+                raise ValidationError(_('To Pay Amount and Payment Amount must be equal!'))
 
-            writeoff_acc_id = False
-            writeoff_journal_id = False
             # if the partner of the payment is different of ht payment group we change it.
-            rec.payment_ids.filtered(lambda p : p.partner_id != rec.partner_id).write(
-                {'partner_id': rec.partner_id.id})
-            # al crear desde website odoo crea primero el pago y lo postea
-            # y no debemos re-postearlo
-            if not create_from_website and not create_from_expense:
+            rec.payment_ids.filtered(lambda p: p.partner_id != rec.partner_id.commercial_partner_id).write(
+                {'partner_id': rec.partner_id.commercial_partner_id.id})
+
+            # no volvemos a postear lo que estaba posteado
+            if not created_automatically:
                 rec.payment_ids.filtered(lambda x: x.state == 'draft').action_post()
 
-            counterpart_aml = rec.payment_ids.mapped('move_line_ids').filtered(
-                lambda r: not r.reconciled and r.account_id.internal_type in (
-                    'payable', 'receivable'))
+            if not rec.receiptbook_id and not rec.name:
+                rec.name = any(
+                    rec.payment_ids.mapped('name')) and ', '.join(
+                    rec.payment_ids.mapped('name')) or False
 
-            # porque la cuenta podria ser no recivible y ni conciliable
-            # (por ejemplo en sipreco)
-            if counterpart_aml and rec.to_pay_move_line_ids:
-                (counterpart_aml + (rec.to_pay_move_line_ids)).reconcile()
+            if not created_automatically:
+                counterpart_aml = rec.payment_ids.mapped('line_ids').filtered(
+                    lambda r: not r.reconciled and r.account_id.internal_type in ('payable', 'receivable'))
+                if counterpart_aml and rec.to_pay_move_line_ids:
+                    (counterpart_aml + (rec.to_pay_move_line_ids)).reconcile()
 
             rec.state = 'posted'
         return True
