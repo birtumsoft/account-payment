@@ -2,7 +2,18 @@ from odoo import models, fields, api
 from odoo.addons.account.models.account_tax import TYPE_TAX_USE
 
 
-TYPE_TAX_USE += [('customer', 'Customer Payment'), ('supplier', 'Supplier Payment')]
+class AccountTaxTemplate(models.Model):
+    _inherit = "account.tax.template"
+
+    type_tax_use = fields.Selection(
+        selection_add=[
+            ('customer', 'Customer Payment'),
+            ('supplier', 'Supplier Payment'),
+        ],
+        ondelete={'customer': 'cascade',
+                  'supplier': 'cascade'}
+        #ondelete="set null",
+    )
 
 
 class AccountTax(models.Model):
@@ -10,6 +21,16 @@ class AccountTax(models.Model):
     We could also use inherits but we should create methods of chart template
     """
     _inherit = "account.tax"
+
+    type_tax_use = fields.Selection(
+        selection_add=[
+            ('customer', 'Customer Payment'),
+            ('supplier', 'Supplier Payment'),
+        ],
+        ondelete={'customer': 'cascade',
+                  'supplier': 'cascade'}
+        #ondelete="set null",
+    )
 
     amount = fields.Float(
         default=0.0,

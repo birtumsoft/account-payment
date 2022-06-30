@@ -23,10 +23,19 @@ class AccountChartTemplate(models.Model):
             company, acc_template_ref)
 
         if company._localization_use_withholdings():
-            journal = self.env['account.journal'].with_context(withholding_journal=True).create({
+            # creamos diario para retenciones
+            inbound_withholding = self.env.ref(
+                'account_withholding.account_payment_method_in_withholding')
+            outbound_withholding = self.env.ref(
+                'account_withholding.account_payment_method_out_withholding')
+            journal = self.env['account.journal'].create({
                 'name': 'Retenciones',
                 'type': 'cash',
                 'company_id': company.id,
+                'inbound_payment_method_ids': [
+                    (4, inbound_withholding.id, None)],
+                'outbound_payment_method_ids': [
+                    (4, outbound_withholding.id, None)],
             })
             bank_journals += journal
 
@@ -34,5 +43,8 @@ class AccountChartTemplate(models.Model):
             # to avoid creation, so we delete it
             to_unlink = journal.default_account_id
             journal.default_account_id = False
-            to_unlink.unlink()
+            #journal.default_credit_account_id = False
+            #journal.default_debit_account_id = False
+            to_unlink.with_context(force_unlink=True).unlink()
+
         return bank_journals
