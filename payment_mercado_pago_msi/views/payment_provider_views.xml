@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="payment_provider_form" model="ir.ui.view">
+        <field name="name">Mercado Pago Provider Form</field>
+        <field name="model">payment.provider</field>
+        <field name="inherit_id" ref="payment_mercado_pago.payment_provider_form"/>
+        <field name="arch" type="xml">
+            <field name="mercado_pago_access_token" position="after">
+                <field name="use_installments"
+                       invisible="code != 'mercado_pago'"/>
+                <field name="installments"
+                       required="use_installments == True"
+                       invisible="not use_installments or code != 'mercado_pago'"/>
+            </field>
+        </field>
+    </record>
+
+</odoo>
